@@ -1,80 +1,103 @@
-import logo from './logo.svg';
-import React, {useState, useEffect} from "react"
-// import {interval} from "rxjs";
-import { Observable } from 'rxjs';
-// import {takeWhile, startWith, scan, repeat} from "rxjs/operators"
-import './App.css';
+import logo from "./logo.svg";
+import React, { useState, useRef, useEffect } from "react";
+import { Observable } from "rxjs";
+import "./App.css";
 
-// const observable$ = interval(1).pipe(
-//   startWith(0),
-//   scan(time => time+1),
-//   takeWhile(time => time <= 60),
-//   repeat()
-// )
-
+let val = 52;
+const msec = new Observable((subscriber) => {
+  const intervalId = setInterval(() => {
+    val += 1;
+    subscriber.next(val);
+    if (val === 59) {
+      val = -1;
+    }
+  }, 400);
+  return function unsubscribe() {
+    clearInterval(intervalId);
+  };
+});
 
 function App() {
-  const [ms, msSet] = useState(0)
-  let val = 0
-  const foo = new Observable(subscriber => {
-    
-    subscriber.next(val+1);
-    setInterval(() => {
-      val+=1
-      subscriber.next(val);
-    }, 1000)
-    
-  
-  });
+  const [sec, setSec] = useState(0);
+  const [min, setMin] = useState(0);
+  const [hour, setHour] = useState(0);
+  const [started, setStarted] = useState(false);
+  const secSubscription = useRef(null);
+  const start = () => {
+    if (started) {
+      stop();
+    } else {
+      secSubscription.current = msec.subscribe((x) => {
+        console.log(x);
+        setSec(x);
+      });
+      setStarted(true);
+    }
+  };
   useEffect(() => {
-    foo.subscribe(x => {
-      console.log(x);
-    });
-    
-  }, [foo])
-  
-  // const [sec, setSec] = useState();
-  // const [min, setMin] = useState(0)
-  // const [hour, setHour] = useState(0)
+    if (sec >= 59) {
+      setMin((min1) => {
+        return min1 >= 59 ? 0 : min1 + 1;
+      });
+    }
+  }, [sec]);
 
-  
+  useEffect(() => {
+    if (min >= 59) {
+      setHour((hour1) => {
+        console.log(hour1);
+        return hour1 >= 59 ? 0 : hour1 + 1;
+      });
+    }
+  }, [min]);
 
-  // useEffect(() => {
-  //   const sub = observable$.subscribe(setSec)
+  const stop = () => {
+    val = 0;
+    setSec(0);
+    setMin(0);
+    setHour(0);
+    secSubscription.current.unsubscribe();
+    setStarted(false);
+  };
 
-    
-  //   return()=>sub.unsubscribe()
-  // }, [])
-  // useEffect(() => {
+  const wait = () => {
+    secSubscription.current?.unsubscribe();
+    setStarted(false);
+  };
 
-  //   if(sec>=60){
-  //     setMin((min1)=>{
-  //       return min1 >= 59 ? 0 : min1+1
-  //     })
+  const [click, setClick] = useState(0);
+  const delay = 300;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setClick(0);
+    }, delay);
+    if (click === 2) {
+      wait();
+    }
 
-  //   }
-  // }, [sec])
-  // useEffect(() => {
-  //   // setMin(min+sec%60)
-  //   if(min>=60){
-  //     setHour((hour1)=>{
-  //       return hour1 >= 59 ? 0 : hour1+1
-  //     })
-  //   }
-  // }, [min])
+    return () => clearTimeout(timer);
+  }, [click]);
+
+  const reset = () => {
+    val = 0;
+    setSec(0);
+    setMin(0);
+    setHour(0);
+  };
 
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" width="100px"/>
+        <img src={logo} className="App-logo" alt="logo" width="100px" />
         <div className="timer">
-          <h3>Timer</h3>
-          {/* <div className="display">{`${hour} : ${min} : ${sec}`}</div> */}
-          {/* <button onClick={}>start</button> */}
-
+          <h3> Timer </h3>
+          <div className="display">{`${hour} : ${min} : ${sec}`}</div>
+          <button onClick={start}> start/stop </button>
+          <button onClick={() => setClick((prev) => prev + 1)}> wait </button>
+          <button onClick={reset}> reset </button>
+          {/* {hour} {min} {sec} */}
         </div>
       </header>
-      
     </div>
   );
 }
