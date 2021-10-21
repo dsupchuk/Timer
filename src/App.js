@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Observable } from "rxjs";
 import "./App.css";
 
-let val = 52;
+let val = 0;
 const msec = new Observable((subscriber) => {
   const intervalId = setInterval(() => {
     val += 1;
@@ -11,7 +11,7 @@ const msec = new Observable((subscriber) => {
     if (val === 59) {
       val = -1;
     }
-  }, 400);
+  }, 1000);
   return function unsubscribe() {
     clearInterval(intervalId);
   };
